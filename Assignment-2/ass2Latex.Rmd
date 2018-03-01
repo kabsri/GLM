@@ -1,0 +1,129 @@
+---
+title: "MATH523 Assignment 2"
+author: "Kabilan Sriranjan"
+date: "February 20, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#A5
+##a)
+The expected Fisher information for a Gamma GLM is given by
+\begin{align*}
+I(\beta) &= X^TWX \\
+&= \begin{bmatrix} 1 & \dots & 1 \\ x_1 & \dots & x_n\end{bmatrix} diag\Bigg(\frac{1}{a(\phi_i)b''(\theta_i)g'(\theta_i)}\Bigg) \begin{bmatrix} 1 & x_1 \\ \dots & \dots \\ 1 & x_n \end{bmatrix}\\
+&= \begin{bmatrix} \frac{1}{a(\phi_1)b''(\theta_1)g'(\theta_1)} & \dots & \frac{1}{a(\phi_n)b''(\theta_n)g'(\theta_n)^2} \\ \frac{x_1}{a(\phi_1)b''(\theta_1)g'(\theta_1)} & \dots & \frac{x_n}{a(\phi_n)b''(\theta_n)g'(\theta_n)^2}\end{bmatrix} \begin{bmatrix} 1 & x_1 \\ \dots & \dots \\ 1 & x_n \end{bmatrix} \\
+&= \begin{bmatrix} \sum_{i=1}^{n}\frac{1}{a(\phi_i)b''(\theta_i)g'(\theta_i)} & \sum_{i=1}^{n}\frac{x_i}{a(\phi_i)b''(\theta_i)g'(\theta_i)} \\ \sum_{i=1}^{n}\frac{x_i}{a(\phi_i)b''(\theta_i)g'(\theta_i)} & \sum_{i=1}^{n}\frac{x_i^2}{a(\phi_i)b''(\theta_i)g'(\theta_i)^2} \end{bmatrix} \\
+&= \begin{bmatrix} \sum_{i=1}^{n}\frac{1}{\frac{\mu^2}{\nu_i}g'(\theta_i)^2} & \sum_{i=1}^{n}\frac{x_i}{\frac{\mu^2}{\nu_i}g'(\theta_i)^2} \\ \sum_{i=1}^{n}\frac{x_i}{\frac{\mu^2}{\nu_i}g'(\theta_i)^2} & \sum_{i=1}^{n}\frac{x_i^2}{\frac{\mu^2}{\nu_i}g'(\theta_i)^2} \end{bmatrix} \\
+\end{align*}
+In the case of the canonical link we can simplify this to
+\[
+I(\beta) = \begin{bmatrix} \sum_{i=1}^{n}\mu_i^2\nu_i & \sum_{i=1}^{n}\mu_i^2x_i\nu_i \\ \sum_{i=1}^{n}\mu_i^2x_i\nu_i & \sum_{i=1}^n\mu_i^2x_i^2\nu_i \end{bmatrix} \\
+\]
+
+##b)
+The asymptotic variances of $\widehat{\beta}_0$ and $\widehat{\beta}_1$ are given by the reciprocal of the diagonal elements of the expected Fisher information
+\begin{align*}
+var(\beta_0) &= \frac{1}{\sum_{i=1}^{n}\nu_i} \\
+var(\beta_1) &= \frac{1}{\sum_{i=1}^nx_i^2\nu_i}
+\end{align*}
+
+##c)
+
+##d)
+
+##e)
+\begin{align*}
+D(y, \hat{\mu}) &= 2\sum_{i=1}^{n}w_i(y_i(\bar{\theta}_i-\hat{\theta}_i)-b(\bar{\theta}_i)+b(\hat{\theta}_i)) \\
+&= \sum_{i=1}^{n}w_i(-\frac{1}{y_i}+\frac{1}{\hat{\mu}_i})-log(y_i)+log(\hat{\mu}_i)) \\
+&= 2\sum_{i=1}^{n}w_i(\frac{y_i-\hat{\mu}_i}{\hat{\mu_i}}-log(\frac{y_i}{\hat{\mu}_i}))
+\end{align*}
+
+##f)
+Pearson residuals
+\[
+\frac{y_i-\hat{\mu}_i}{\hat{\mu}}\sqrt{w_i}
+\]
+Anscombe residuals
+\[
+\frac{3(y_i^{\frac{1}{3}}-\hat{\mu_i}^{\frac{1}{3}})}{\hat{\mu}_i^{\frac{1}{6}}}
+\]
+Deviance residuals
+\[
+sign(y_i-\hat{\mu}_i)\sqrt{2w_i(\frac{y_i-\hat{\mu}_i}{\hat{\mu_i}}-log(\frac{y_i}{\hat{\mu}_i}))}
+\]
+
+#A6
+For a Normal GLM we have $\theta_i = \mu_i$ and $b(\theta)=\frac{\theta^2}{2}$. The deviance is given by
+\begin{align*}
+D(y, \hat{\mu}) &= 2\sum_{i=1}^{n}(y_i(y_i-\hat{\mu}_i) - \frac{y_i^2}{2} + \frac{\hat{\mu}_i^2}{2}) \\
+&= \sum_{i=1}^{n}(y_i-\hat{\mu}_i)^2
+\end{align*}
+So the deviance is just the sum of the squared residuals
+In a linear regression we may consider the quantity $SS_{res}(\beta_2|\beta_1)$ to compare the residual sum of squares of a model of just $\beta_1$ with one where we include $\beta_2$. This is exactly the difference of deviances.
+
+#A7
+##a)
+```{r}
+library(glmbb)
+data(crabs)
+
+fullModel <- glm(satell~(weight+color)^2, data=crabs, family=poisson)
+summary(fullModel)
+```
+This is the summary of the model with weight, colour, and interaction terms between weight and colour. I used the poisson GLM with the canonical link because the number of satellites could theoretically be arbitarily large so Binomial wouldn't make sense.
+
+##b)
+```{r}
+X <- model.matrix(fullModel)
+W <- fullModel$weights
+
+beta <- fullModel$coefficients
+beta2 <- beta[6:8]
+
+I <- t(X) %*% diag(W) %*% X
+I2 <- I[6:8,6:8]
+
+waldTest <- t(beta2) %*% I2 %*% beta2
+pchisq(waldTest, 3, lower.tail=FALSE)
+```
+The Wald test is based off the result that
+\[
+\widehat{\beta}^{(1)T}X^TWX\widehat{\beta}^{(1)} \approx \chi_{p_1}^2 
+\]
+where X is the design matrix but only for the predictors we are testing, $\beta^{(1)}$ are the parameters for the predictors were are testing, and $p_1$ is the nunmber of predictors we are testing.
+
+##c)
+```{r}
+reducedModel <- glm(satell~weight+color, data=crabs, family=poisson)
+devTest <- deviance(reducedModel) - deviance(fullModel)
+pchisq(devTest, 3, lower.tail=FALSE)
+```
+When comparing the full model to a model without interaction terms using the chi-squared test we get a low p-value. This suggests that we are justified in using the more complicated model.
+
+##d)
+```{r}
+newColor <- crabs$color
+levels(newColor) <- c("dark", "dark", "light", "medium")
+
+model2 <- glm(satell~(weight+newColor)^2, data=crabs, family=poisson)
+summary(model2)
+```
+Looking at the summary of the original model we see that the parameter for the "darker" level of our factor predictor is insignicifcant. This is possibly due to darker not being very different from dark. Hence I merged all the dark and darker observations to be the same thing.
+
+##e)
+```{r}
+res_p <- residuals(model2, "pearson")
+plot(fitted(model2), res_p, xlab="Satellites", ylab="Pearson residual")
+title("Pearson Residuals vs Fitted Response")
+
+res_d <- residuals(model2, "deviance")
+plot(fitted(model2), res_d, xlab="Satellites", ylab="Deviance residual")
+title("Deviance Residuals vs Fitted Response")
+
+deviance(model2)
+```
+The residual plots appear to have some patterns but this is likely due to the discreteness of the response variable. Other than the lines they appear to be a null plot, which is good. Also the deviance is almost equal to the deviance of the original model, so we may as well take the simpler model as we aren't getting a worse deviance by doing so.
