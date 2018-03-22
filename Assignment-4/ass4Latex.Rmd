@@ -1,0 +1,18 @@
+---
+title: "MATH523 Assignment 4"
+author: "Kabilan Sriranjan"
+date: "March 29, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## A12
+# a)
+
+```{r cars}
+summary(cars)
+```
+
