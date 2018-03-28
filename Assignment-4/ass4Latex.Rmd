@@ -12,7 +12,137 @@ knitr::opts_chunk$set(echo = TRUE)
 ## A12
 # a)
 
-```{r cars}
-summary(cars)
+```{r}
+library(aod)
+library(VGAM)
+library(nnet)
 ```
 
+## A13
+
+# a)
+
+```{r}
+#A13
+I <- c(14, 483, 497, 1008)
+notI <- c(1105, 411111, 4624, 157342)
+S <- c("Seat belt", "Seat belt", "None", "None")
+E <- c("Yes", "No", "Yes", "No")
+
+model.fatal <- glm(cbind(I, notI) ~ S+E, family=binomial)
+#likelihood test
+pchisq(deviance(model.fatal), df=1, lower.tail=FALSE)
+#pearson chi square test
+pchisq(sum(residuals(model.fatal, type="pearson")^2), df=1, lower.tail=FALSE)
+```
+
+The p-values we get using both tests are not significant, which means that our model is adequate.
+
+# b)
+
+```{r}
+summary(model.fatal)
+beta <- coef(model.fatal)
+odds.ratio <- exp(beta)
+stdErr <- summary(model.fatal)$coefficients[,2]
+
+lowerCI <- exp(beta-pnorm(0.025)*stdErr)
+higherCI <- exp(beta+pnorm(0.025)*stdErr)
+#Odds ratio and confidence interval for Seatbelt
+odds.ratio[2]
+lowerCI[2]
+higherCI[2]
+#Odds ratio and confidence interval for Ejected
+odds.ratio[3]
+lowerCI[3]
+higherCI[3]
+```
+
+The odds ratio, $r$, for Seatbelt can be obtained by
+\begin{align*}
+r &= \frac{e^{\beta_0 + \beta_1(1) + \beta_2x_{i2}}}{e^{\beta_0 + \beta_1(0) + \beta_2x_{i2}}} \\
+&= e^{\beta_1}
+\end{align*}
+And we can do the same for $beta_2$ to get the odds ratio for Ejected.
+The confidence intervals are obtained through the formula $\widehat{\beta}\pm se(\widehat{\beta})z_{0.025}$ 
+
+# c)
+
+```{r}
+model.fatal2 <- glm(cbind(I, notI) ~ E, family=binomial)
+beta2 <- coef(model.fatal2)
+odds.ratio2 <- exp(beta2)
+stdErr2 <- summary(model.fatal2)$coefficients[,2]
+lowerCI2 <- exp(beta2-pnorm(0.025)*stdErr2)
+higherCI2 <- exp(beta2+pnorm(0.025)*stdErr2)
+
+#Odds and confidence interval
+odds.ratio2[2]
+lowerCI2[2]
+higherCI2[2]
+```
+
+We compute the odds ratio and confidence interval for the new model the exact same way as before.
+
+## A14
+
+# a) 
+
+```{r}
+#A14
+race <- c(1, 1, 0, 0)
+gender <- c(1, 0, 1, 0)
+heaven.yes <- c(88, 54, 397, 235)
+heaven.mb <- c(16, 7, 141, 189)
+heaven.no <- c(2, 5, 24, 39)
+
+model.heaven <- multinom(cbind(heaven.yes, heaven.mb, heaven.no) ~ race+gender)
+summary(model.heaven)
+```
+
+$log(\pi_{i1}/\pi_{i3})$ is given by 
+\[
+\alpha_1 + \beta_{1}^Gx_{i1} + \beta_{1}^Rx_{i2}
+\]
+
+$log(\pi_{i2}/\pi_{i3})$ is given by
+\[
+\alpha_2 + \beta_{2}^Gx_{i1} + \beta_{2}^Rx_{i2}
+\]
+
+$log(\pi_{i1}/\pi_{i2})$ is given by
+\[
+log(\pi_{i1}/\pi_{i3}) - log(\pi_{i2}/\pi_{i3})
+\]
+
+# b)
+```{r}
+model.heavenB <- glm(cbind(heaven.yes, heaven.mb) ~ race+gender, family=binomial)
+summary(model.heavenB)
+
+beta.gender <- coef(model.heavenB)[3]
+stderr.gender <- summary(model.heavenB)$coefficients[,2][3]
+gender.oddsratio <- exp(beta.gender)
+lowerCI.gender <- exp(beta.gender-pnorm(0.025)*stderr.gender)
+higherCI.gender <- exp(beta.gender+pnorm(0.025)*stderr.gender)
+#Odds ratio and confidence interval
+gender.oddsratio
+lowerCI.gender
+higherCI.gender
+```
+
+From looking at the odds ratio it appears that males have triple the odds of not believing in heaven than females.
+
+# c)
+```{r}
+model.heavenRace <- glm(cbind(heaven.yes, heaven.no) ~ race, family=binomial)
+summary(model.heavenRace)
+anova(model.heavenB, model.heavenRace, test="Chi")
+```
+
+We can check if gender has an effect on the response when race is controlled by comparing the model with both race and gender to the model with only race. If the test is significant that that means the nested model is not an adequte simplification and so gender does indeed affect the response. Since we do get a significant p-value then that means belief in heaven is not independant of gender when race is controlled for.
+
+
+## A15
+
+If the binary response is the result of an underlying latent variable, this suggests that after some certain threshold, $T$, the response changes from O to 1. If both groups have similar location then they are both close to $T$. But because one has significantly higher dispersion than the other, it will have a wide confidence interval that overlaps with the other side of $T$. This makes it hard to fit a model because if a response is 0 we can't tell if it is truly 0 or actually 1 but the dispersion makes it fall on the wrong side of $T$.
